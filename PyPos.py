@@ -1,9 +1,10 @@
-import requests
-import logging
-import coloredlogs
 import argparse
+import logging
+import socket
 
-VERSION = 0.1
+import coloredlogs
+
+VERSION = 0.2
 
 
 def setup_args():
@@ -25,13 +26,17 @@ def setup_args():
 
 
 def scan_port(host, port, print_closed=False):
-    uri = str(host) + ":" + str(port)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(2)
     try:
-        result = requests.get(uri)
-        logging.info("Port {0:0d} is open.".format(port))
-    except requests.exceptions.RequestException:
-        if print_closed:
-            logging.warning("port {0:1d} is closed.".format(port))
+        result = sock.connect_ex((host, port))
+        if result == 0:
+            logging.info("Port {0:0d} is open".format(port))
+        else:
+            if print_closed:
+                logging.warning("port {0:1d} is closed.".format(port))
+    except socket.error as err:
+        logging.warning(err)
 
 
 def main():
